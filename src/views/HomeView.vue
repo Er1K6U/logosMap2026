@@ -1,9 +1,25 @@
+<template>
+  <div class="home">
+    <MapaColombia />
+  </div>
+</template>
+
 <script setup>
-import TheWelcome from '../components/TheWelcome.vue'
+import MapaColombia from '@/components/MapaColombia.vue'
+import { useEntidadesStore } from '@/stores/entidadesStore'
+import { onMounted } from 'vue'
+
+const store = useEntidadesStore()
+
+// Cargar datos al iniciar
+onMounted(() => {
+  store.cargarDesdeLocalStorage()
+})
 </script>
 
-<template>
-  <main>
-    <TheWelcome />
-  </main>
-</template>
+<style scoped>
+.home {
+  width: 100%;
+  min-height: 100vh;
+}
+</style>

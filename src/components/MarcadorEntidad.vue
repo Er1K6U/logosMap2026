@@ -56,8 +56,8 @@ defineEmits(['click'])
 const imagenCargada = ref(true)
 
 const estilosPosicion = computed(() => ({
-  left: `${props.posicion.x}px`,
-  top: `${props.posicion.y}px`,
+  left: `${props.posicion.x}%`,
+  top: `${props.posicion.y}%`,
 }))
 
 const iniciales = computed(() => {

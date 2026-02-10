@@ -1,7 +1,7 @@
 <template>
   <div class="relative w-full min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4">
     <!-- Panel de información superior -->
-    <div class="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-80 z-10">
+    <div class="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-80 z-20">
       <div class="flex justify-between items-start mb-2">
         <div>
           <h3 class="text-lg font-bold text-gray-800">
@@ -40,23 +40,34 @@
     <div class="flex items-center justify-center min-h-screen">
       <div class="relative w-full max-w-4xl">
         <!-- SVG del mapa -->
-        <div ref="mapaContainer" class="relative w-full" v-html="mapaSVG"></div>
+        <div ref="mapaContainer" v-html="mapaSVG" class="relative w-full"></div>
 
-        <!-- Marcadores de entidades -->
-        <TransitionGroup name="marcador">
-          <MarcadorEntidad
-            v-for="entidad in entidadesVisibles"
-            :key="entidad.id"
-            :entidad="entidad"
-            :posicion="calcularPosicion(entidad.departamento)"
-            @click="seleccionarEntidad"
-          />
-        </TransitionGroup>
+        <!-- Capa de marcadores encima del SVG -->
+        <div
+          v-if="mapaContainer"
+          class="absolute top-0 left-0 w-full h-full pointer-events-none"
+          :style="{ width: ancho + 'px', height: alto + 'px' }"
+        >
+          <TransitionGroup name="marcador">
+            <div
+              v-for="entidad in entidadesVisibles"
+              :key="entidad.id"
+              class="absolute pointer-events-auto"
+              :style="calcularPosicionAbsoluta(entidad.departamento)"
+            >
+              <MarcadorEntidad
+                :entidad="entidad"
+                :posicion="{ x: 0, y: 0 }"
+                @click="seleccionarEntidad"
+              />
+            </div>
+          </TransitionGroup>
+        </div>
 
         <!-- Mensaje si no hay entidades -->
         <div
           v-if="store.totalEntidades === 0"
-          class="absolute inset-0 flex items-center justify-center pointer-events-none"
+          class="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
         >
           <div class="bg-white/90 rounded-lg shadow-lg p-6 text-center max-w-md">
             <p class="text-lg font-semibold text-gray-700 mb-2">No hay entidades registradas</p>
@@ -71,14 +82,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useEntidadesStore } from '@/stores/entidadesStore'
-import { departamentos, getDepartamentoById } from '@/data/departamentos'
+import { getDepartamentoById } from '@/data/departamentos'
 import MarcadorEntidad from './MarcadorEntidad.vue'
 
 const store = useEntidadesStore()
 const mapaContainer = ref(null)
 const mapaSVG = ref('')
+const ancho = ref(0)
+const alto = ref(0)
 
 // Cargar SVG del mapa
 onMounted(async () => {
@@ -87,14 +100,26 @@ onMounted(async () => {
     mapaSVG.value = await response.text()
 
     // Agregar interactividad al SVG después de cargarlo
+    await nextTick()
     setTimeout(() => {
       configurarInteractividadMapa()
+      calcularDimensiones()
     }, 100)
   } catch (error) {
     console.error('Error al cargar el mapa SVG:', error)
     mapaSVG.value = '<p class="text-red-600">Error al cargar el mapa de Colombia</p>'
   }
 })
+
+function calcularDimensiones() {
+  if (mapaContainer.value) {
+    const svg = mapaContainer.value.querySelector('svg')
+    if (svg) {
+      ancho.value = svg.clientWidth
+      alto.value = svg.clientHeight
+    }
+  }
+}
 
 function configurarInteractividadMapa() {
   if (!mapaContainer.value) return
@@ -133,14 +158,21 @@ const departamentoActual = computed(() => {
   return getDepartamentoById(store.departamentoSeleccionado)
 })
 
-function calcularPosicion(departamentoId) {
+function calcularPosicionAbsoluta(departamentoId) {
   const dep = getDepartamentoById(departamentoId)
-  return dep?.coordenadas || { x: 0, y: 0 }
+  if (!dep || !dep.coordenadas) return { left: '0px', top: '0px' }
+
+  const x = (dep.coordenadas.x / 100) * ancho.value
+  const y = (dep.coordenadas.y / 100) * alto.value
+
+  return {
+    left: `${x}px`,
+    top: `${y}px`,
+  }
 }
 
 function seleccionarEntidad(entidad) {
   console.log('Entidad seleccionada:', entidad)
-  // Aquí puedes agregar lógica adicional, como mostrar un modal con detalles
 }
 
 function limpiarSeleccion() {
@@ -182,6 +214,7 @@ function limpiarSeleccion() {
 :deep(svg) {
   width: 100%;
   height: auto;
+  display: block;
 }
 
 :deep(path) {

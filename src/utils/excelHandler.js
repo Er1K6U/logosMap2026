@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { getDepartamentoByNombre } from '@/data/departamentos'
+import { getDepartamentoByNombre, getDepartamentoById } from '@/data/departamentos'
 
 export async function importarDesdeExcel(archivo) {
   return new Promise((resolve, reject) => {
@@ -14,42 +14,53 @@ export async function importarDesdeExcel(archivo) {
         const nombreHoja = workbook.SheetNames[0]
         const hoja = workbook.Sheets[nombreHoja]
 
-        // Convertir a JSON
-        const jsonData = XLSX.utils.sheet_to_json(hoja)
+        // Convertir a JSON (defval: '' para que no salga undefined en celdas vacías)
+        const jsonData = XLSX.utils.sheet_to_json(hoja, { defval: '' })
 
-        // Mapear y validar campos
         const entidades = []
         const errores = []
 
         jsonData.forEach((fila, index) => {
-          const nombre = fila['Nombre'] || fila['nombre'] || fila['NOMBRE']
-          const departamentoNombre =
-            fila['Departamento'] || fila['departamento'] || fila['DEPARTAMENTO']
-          const logo = fila['Logo'] || fila['logo'] || fila['LOGO'] || ''
+          // helper para leer clave sin importar mayúsculas/espacios
+          const get = (key) => {
+            const keys = Object.keys(fila || {})
+            const found = keys.find(
+              (k) => String(k).trim().toLowerCase() === String(key).trim().toLowerCase()
+            )
+            return found ? fila[found] : ''
+          }
+
+          const nombre = get('Nombre')
+          const departamentoNombre = get('Departamento')
+          const logo = get('Logo')
+
+          const filaExcel = index + 2 // +2 por encabezado en fila 1
 
           // Validar campos obligatorios
-          if (!nombre) {
-            errores.push(`Fila ${index + 2}: Falta el nombre de la entidad`)
+          if (!String(nombre).trim()) {
+            errores.push(`Fila ${filaExcel}: Falta el nombre de la entidad`)
             return
           }
 
-          if (!departamentoNombre) {
-            errores.push(`Fila ${index + 2}: Falta el departamento`)
+          if (!String(departamentoNombre).trim()) {
+            errores.push(`Fila ${filaExcel}: Falta el departamento`)
             return
           }
 
-          // Normalizar departamento
-          const departamento = normalizarDepartamento(departamentoNombre)
+          // Normalizar departamento (por nombre o por id)
+          const departamentoId = normalizarDepartamento(departamentoNombre)
 
-          if (!departamento) {
-            errores.push(`Fila ${index + 2}: Departamento "${departamentoNombre}" no válido`)
+          if (!departamentoId) {
+            errores.push(
+              `Fila ${filaExcel}: Departamento "${String(departamentoNombre).trim()}" no válido`
+            )
             return
           }
 
           entidades.push({
-            nombre: nombre.trim(),
-            departamento: departamento,
-            logo: logo.trim(),
+            nombre: String(nombre).trim(),
+            departamento: departamentoId,
+            logo: String(logo || '').trim(),
           })
         })
 
@@ -68,9 +79,19 @@ export async function importarDesdeExcel(archivo) {
   })
 }
 
-function normalizarDepartamento(nombre) {
-  const dep = getDepartamentoByNombre(nombre)
-  return dep ? dep.id : null
+function normalizarDepartamento(valor) {
+  const v = String(valor ?? '').trim()
+  if (!v) return null
+
+  // 1) si coincide como ID exacto (ej: "cocun" o "bogota")
+  const depById = getDepartamentoById(v)
+  if (depById) return depById.id
+
+  // 2) si coincide como nombre (con normalización robusta)
+  const depByNombre = getDepartamentoByNombre(v)
+  if (depByNombre) return depByNombre.id
+
+  return null
 }
 
 export function generarPlantillaExcel() {
@@ -85,7 +106,7 @@ export function generarPlantillaExcel() {
   const ws = XLSX.utils.aoa_to_sheet(datos)
 
   // Ajustar ancho de columnas
-  ws['!cols'] = [{ wch: 30 }, { wch: 25 }, { wch: 25 }]
+  ws['!cols'] = [{ wch: 30 }, { wch: 25 }, { wch: 30 }]
 
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Entidades')
@@ -97,12 +118,14 @@ export function exportarEntidadesAExcel(entidades, departamentos) {
   const datos = [['Nombre', 'Departamento', 'Logo']]
 
   entidades.forEach((entidad) => {
-    const dep = departamentos.find((d) => d.id === entidad.departamento)
+    const dep = (departamentos || []).find(
+      (d) => String(d.id).toLowerCase().trim() === String(entidad.departamento).toLowerCase().trim()
+    )
     datos.push([entidad.nombre, dep ? dep.nombre : entidad.departamento, entidad.logo])
   })
 
   const ws = XLSX.utils.aoa_to_sheet(datos)
-  ws['!cols'] = [{ wch: 30 }, { wch: 25 }, { wch: 25 }]
+  ws['!cols'] = [{ wch: 30 }, { wch: 25 }, { wch: 30 }]
 
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Entidades')

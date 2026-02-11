@@ -1,7 +1,11 @@
 <template>
   <div
-    class="relative w-full min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 flex items-center justify-center p-6"
+    class="relative w-full min-h-screen bg-cover bg-center flex justify-center p-2 sm:p-6 overflow-hidden"
+    style="background-image: url('/assets/fondo.jpg');"
   >
+    <!-- Overlay suave para que el fondo sea textura, no protagonista -->
+    <div class="absolute inset-0 bg-white/70 pointer-events-none"></div>
+
     <!-- Panel de información superior -->
     <div v-if="false" class="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-80 z-20">
       <div class="flex justify-between items-start mb-2">
@@ -38,8 +42,16 @@
     </div>
 
     <!-- Contenedor del mapa -->
-    <div class="flex items-center justify-center w-full">
-      <div style="position: relative; width: 980px; height: 980px; overflow: hidden">
+    <div class="relative z-10 flex items-center justify-center w-full">
+      <div
+        style="
+          position: relative;
+          width: min(980px, calc(100vw - 16px), calc(100vh - 16px));
+          height: min(980px, calc(100vw - 16px), calc(100vh - 16px));
+          margin: 0 auto;
+          overflow: hidden;
+        "
+      >
         <!-- SVG del mapa -->
         <div ref="mapaContainer" v-html="mapaSVG" style="width: 100%; height: 100%"></div>
 
@@ -50,8 +62,8 @@
           :class="['marcador-animado', { 'marcador-destacado': entidadDestacadaIndex === index }]"
           :style="{
             position: 'absolute',
-            left: calcularPosicion(entidad.departamento).x + 'px',
-            top: calcularPosicion(entidad.departamento).y + 'px',
+            left: calcularPosicion(entidad.departamentoId || entidad.departamento).x + 'px',
+            top: calcularPosicion(entidad.departamentoId || entidad.departamento).y + 'px',
             transform: 'translate(-50%, -50%)',
             zIndex: entidadDestacadaIndex === index ? 9999 : 100,
             animationDelay: index * 0.3 + 's',
@@ -62,17 +74,24 @@
           <div class="pulso-onda"></div>
           <div class="pulso-onda" style="animation-delay: 0.5s"></div>
 
-          <!-- Círculo principal -->
           <div class="circulo-marcador">
-            <span class="iniciales-marcador">
+            <img
+              v-if="entidad.logo"
+              :src="obtenerLogoSrc(entidad.logo)"
+              class="logo-marcador"
+              alt=""
+              @error="entidad.logo = ''"
+            />
+            <span v-else class="iniciales-marcador">
               {{ entidad.nombre.substring(0, 2).toUpperCase() }}
             </span>
           </div>
 
-          <!-- Etiqueta nombre -->
-          <div class="etiqueta-marcador">
+          <!-- ✅ Etiqueta SOLO cuando es el destacado -->
+          <div v-if="entidadDestacadaIndex === index" class="etiqueta-marcador">
             {{ entidad.nombre }}
           </div>
+
 
           <!-- Panel de detalles cuando está destacado -->
           <transition name="detalle">
@@ -88,7 +107,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useEntidadesStore } from '@/stores/entidadesStore'
 import { getDepartamentoById } from '@/data/departamentos'
 
@@ -96,6 +115,7 @@ const store = useEntidadesStore()
 const mapaContainer = ref(null)
 const mapaSVG = ref('')
 const entidadDestacadaIndex = ref(-1)
+
 let intervaloRotacion = null
 
 // Cache de posiciones calculadas por SVG (evita recalcular en cada render)
@@ -105,37 +125,50 @@ function limpiarCachePosiciones() {
   posicionesCache.value = {}
 }
 
+const pagina = ref(0)
+const TAM_PAGINA = 15
+const INTERVALO_MS = 8000
+
+// ✅ cursor global para rotar entidad por entidad aunque haya < 15
+const cursorGlobal = ref(0)
+
+const entidadesVisibles = computed(() => {
+  const all = store.entidadesPorDepartamento || []
+  const start = pagina.value * TAM_PAGINA
+  return all.slice(start, start + TAM_PAGINA)
+})
+
+const departamentoActual = computed(() => {
+  if (!store.departamentoSeleccionado) return null
+  return getDepartamentoById(store.departamentoSeleccionado)
+})
+
 onMounted(async () => {
+  try {
+    store.cargarDesdeLocalStorage()
+  } catch (e) {
+    console.warn('No se pudo cargar desde localStorage:', e)
+  }
+
   try {
     const response = await fetch('/assets/colombia.svg')
     mapaSVG.value = await response.text()
 
-    // ✅ PASO 2: Validación de IDs (departamentos.js vs colombia.svg)
     try {
       const { departamentos } = await import('@/data/departamentos')
 
-      // Creamos un set con todos los ids que existen en el SVG
       const temp = document.createElement('div')
       temp.innerHTML = mapaSVG.value
       const svg = temp.querySelector('svg')
 
       const idsSVG = new Set(
         Array.from(svg.querySelectorAll('[id]'))
-          .map((el) =>
-            String(el.id || '')
-              .toLowerCase()
-              .trim(),
-          )
+          .map((el) => String(el.id || '').toLowerCase().trim())
           .filter(Boolean),
       )
 
-      // Comparamos contra departamentos.js
       const faltantes = departamentos
-        .map((d) =>
-          String(d.id || '')
-            .toLowerCase()
-            .trim(),
-        )
+        .map((d) => String(d.id || '').toLowerCase().trim())
         .filter((id) => id && !idsSVG.has(id))
 
       if (faltantes.length) {
@@ -148,10 +181,16 @@ onMounted(async () => {
     }
 
     await nextTick()
-    setTimeout(() => {
+
+    setTimeout(async () => {
       configurarInteractividadMapa()
+
+      // ✅ evita bug de mediciones
+      limpiarCachePosiciones()
+      window.dispatchEvent(new Event('resize'))
+      await nextTick()
+
       iniciarRotacionAutomatica()
-      // Si cambia el tamaño de la ventana, recalculamos posiciones
       window.addEventListener('resize', limpiarCachePosiciones)
     }, 100)
   } catch (error) {
@@ -161,9 +200,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (intervaloRotacion) {
-    clearInterval(intervaloRotacion)
-  }
+  if (intervaloRotacion) clearInterval(intervaloRotacion)
   window.removeEventListener('resize', limpiarCachePosiciones)
 })
 
@@ -195,35 +232,58 @@ function configurarInteractividadMapa() {
   })
 }
 
-// Nueva función: Rotación automática de entidades destacadas
 function iniciarRotacionAutomatica() {
-  setTimeout(() => {
-    if (entidadesVisibles.value.length > 0) {
-      entidadDestacadaIndex.value = 0
+  if (intervaloRotacion) clearInterval(intervaloRotacion)
 
-      intervaloRotacion = setInterval(() => {
-        if (entidadesVisibles.value.length === 0) return
+  const all = store.entidadesPorDepartamento || []
+  const total = all.length
+  if (total === 0) return
 
-        entidadDestacadaIndex.value =
-          (entidadDestacadaIndex.value + 1) % entidadesVisibles.value.length
+  cursorGlobal.value = 0
+  pagina.value = 0
+  entidadDestacadaIndex.value = 0
 
-        console.log('🎯 Destacando:', entidadesVisibles.value[entidadDestacadaIndex.value]?.nombre)
-      }, 8000)
-    }
-  }, 2000)
+  intervaloRotacion = setInterval(() => {
+    const allNow = store.entidadesPorDepartamento || []
+    const totalNow = allNow.length
+    if (totalNow === 0) return
+
+    cursorGlobal.value = (cursorGlobal.value + 1) % totalNow
+
+    const nuevaPagina = Math.floor(cursorGlobal.value / TAM_PAGINA)
+    const nuevoIndex = cursorGlobal.value % TAM_PAGINA
+
+    pagina.value = nuevaPagina
+    entidadDestacadaIndex.value = nuevoIndex
+  }, INTERVALO_MS)
 }
 
-const entidadesVisibles = computed(() => store.entidadesPorDepartamento)
+watch(
+  () => [store.departamentoSeleccionado, store.entidades.length],
+  () => {
+    cursorGlobal.value = 0
+    pagina.value = 0
+    entidadDestacadaIndex.value = 0
+    iniciarRotacionAutomatica()
+  },
+  { immediate: true },
+)
 
-const departamentoActual = computed(() => {
-  if (!store.departamentoSeleccionado) return null
-  return getDepartamentoById(store.departamentoSeleccionado)
-})
+function obtenerLogoSrc(logo) {
+  if (!logo) return ''
+  const v = String(logo).trim()
+
+  if (/^(https?:\/\/)/i.test(v) || /^data:image\//i.test(v)) return v
+  if (v.startsWith('/')) return v
+  if (v.startsWith('assets/')) return '/' + v
+  if (v.startsWith('logos/')) return '/' + v
+  return '/assets/logos/' + v
+}
 
 function calcularPosicion(departamentoId) {
-  // cache para no recalcular en cada render
-  if (posicionesCache.value[departamentoId]) {
-    return posicionesCache.value[departamentoId]
+  const cacheKey = String(departamentoId || '').toLowerCase().trim()
+  if (cacheKey && posicionesCache.value[cacheKey]) {
+    return posicionesCache.value[cacheKey]
   }
 
   const container = mapaContainer.value
@@ -235,18 +295,15 @@ function calcularPosicion(departamentoId) {
   const depId = String(departamentoId || '').trim()
   if (!depId) return { x: 400, y: 400 }
 
-  // Intentamos varias formas por si el SVG maneja IDs en mayúscula/minúscula
   const selector1 = `#${CSS.escape(depId)}`
   const selector2 = `#${CSS.escape(depId.toLowerCase())}`
   const selector3 = `#${CSS.escape(depId.toUpperCase())}`
 
-  // ✅ 1) Preferimos el círculo "oficial" del SVG si existe (trae cx/cy exactos)
   const circleEl =
     svg.querySelector(`circle${selector1}`) ||
     svg.querySelector(`circle${selector2}`) ||
     svg.querySelector(`circle${selector3}`)
 
-  // ✅ 2) Si no hay círculo, caemos al path/g
   const depEl =
     circleEl ||
     svg.querySelector(selector1) ||
@@ -254,7 +311,6 @@ function calcularPosicion(departamentoId) {
     svg.querySelector(selector3)
 
   if (!depEl) {
-    // fallback viejo (por si un depto no existe en el SVG)
     const dep = getDepartamentoById(depId)
     if (!dep?.coordenadas) return { x: 400, y: 400 }
 
@@ -263,28 +319,28 @@ function calcularPosicion(departamentoId) {
     return { x, y }
   }
 
-  // ✅ Centro real del departamento en pixeles de pantalla
-  // ✅ Convertimos desde coordenadas del SVG (viewBox) a pixeles del contenedor
-  const vb = svg.viewBox?.baseVal
-  const cw = container.clientWidth
-  const ch = container.clientHeight
-
   if (circleEl) {
     const cx = parseFloat(circleEl.getAttribute('cx') || '0')
     const cy = parseFloat(circleEl.getAttribute('cy') || '0')
 
-    if (vb && vb.width && vb.height) {
-      const x = ((cx - vb.x) / vb.width) * cw
-      const y = ((cy - vb.y) / vb.height) * ch
+    const pt = svg.createSVGPoint()
+    pt.x = cx
+    pt.y = cy
+
+    const ctm = svg.getScreenCTM()
+    if (ctm) {
+      const screenPt = pt.matrixTransform(ctm)
+
+      const containerRect = container.getBoundingClientRect()
+      const x = screenPt.x - containerRect.left
+      const y = screenPt.y - containerRect.top
 
       const pos = { x, y }
-      posicionesCache.value[departamentoId] = pos
-      console.log(`🎯 CIRCLE ${departamentoId}: x=${Math.round(x)} y=${Math.round(y)}`)
+      posicionesCache.value[cacheKey || depId] = pos
       return pos
     }
   }
 
-  // Fallback: si no hay círculo o no hay viewBox, usamos bbox en pantalla
   const containerRect = container.getBoundingClientRect()
   const r = depEl.getBoundingClientRect()
 
@@ -292,10 +348,7 @@ function calcularPosicion(departamentoId) {
   const y = (r.top + r.bottom) / 2 - containerRect.top
 
   const pos = { x, y }
-  posicionesCache.value[departamentoId] = pos
-
-  console.log(`✅ POS SVG ${departamentoId}: x=${Math.round(x)} y=${Math.round(y)}`)
-  console.log(`✅ POS CONT ${departamentoId}: x=${Math.round(x)} y=${Math.round(y)}`)
+  posicionesCache.value[cacheKey || depId] = pos
   return pos
 }
 
@@ -321,7 +374,6 @@ function getSVGInfo() {
   const rect = svg.getBoundingClientRect()
   const vb = svg.viewBox?.baseVal
 
-  // Si el SVG no trae viewBox, fallback a width/height
   const fallbackWidth = Number(svg.getAttribute('width')) || 800
   const fallbackHeight = Number(svg.getAttribute('height')) || 800
 
@@ -431,6 +483,15 @@ function getSVGInfo() {
   font-size: 18px;
 }
 
+.logo-marcador {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  background: white;
+  border-radius: 12px;
+  padding: 6px;
+}
+
 /* Etiqueta nombre */
 .etiqueta-marcador {
   position: absolute;
@@ -462,28 +523,31 @@ function getSVGInfo() {
 /* Panel de detalles destacado */
 .panel-detalles-destacado {
   position: absolute;
-  top: 130px;
+  top: 118px;
   left: 50%;
   transform: translateX(-50%);
   background: white;
-  border-radius: 12px;
-  padding: 20px;
-  min-width: 280px;
+  border-radius: 14px;
+  padding: 12px 14px;
+  min-width: 220px;
+  max-width: 320px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   border: 3px solid #dc2626;
   pointer-events: none;
 }
 
 .titulo-destacado {
-  font-size: 18px;
-  font-weight: bold;
+  font-weight: 800;
   color: #1f2937;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   text-align: center;
+  font-size: 14px;
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .info-destacado {
-  font-size: 14px;
+  font-size: 12px;
   color: #6b7280;
   margin: 0;
   text-align: center;

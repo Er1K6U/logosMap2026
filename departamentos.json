@@ -1,0 +1,167 @@
+[
+    {
+        "svg_id": "CONAR",
+        "svg_name": "Nariño",
+        "norm_name": "NARINO"
+    },
+    {
+        "svg_id": "COPUT",
+        "svg_name": "Putumayo",
+        "norm_name": "PUTUMAYO"
+    },
+    {
+        "svg_id": "COCHO",
+        "svg_name": "Chocó",
+        "norm_name": "CHOCO"
+    },
+    {
+        "svg_id": "COGUA",
+        "svg_name": "Guainía",
+        "norm_name": "GUAINIA"
+    },
+    {
+        "svg_id": "COVAU",
+        "svg_name": "Vaupés",
+        "norm_name": "VAUPES"
+    },
+    {
+        "svg_id": "COAMA",
+        "svg_name": "Amazonas",
+        "norm_name": "AMAZONAS"
+    },
+    {
+        "svg_id": "COLAG",
+        "svg_name": "La Guajira",
+        "norm_name": "LA GUAJIRA"
+    },
+    {
+        "svg_id": "COCES",
+        "svg_name": "Cesar",
+        "norm_name": "CESAR"
+    },
+    {
+        "svg_id": "CONSA",
+        "svg_name": "Norte de Santander",
+        "norm_name": "NORTE DE SANTANDER"
+    },
+    {
+        "svg_id": "COARA",
+        "svg_name": "Arauca",
+        "norm_name": "ARAUCA"
+    },
+    {
+        "svg_id": "COBOY",
+        "svg_name": "Boyacá",
+        "norm_name": "BOYACA"
+    },
+    {
+        "svg_id": "COVID",
+        "svg_name": "Vichada",
+        "norm_name": "VICHADA"
+    },
+    {
+        "svg_id": "COCAU",
+        "svg_name": "Cauca",
+        "norm_name": "CAUCA"
+    },
+    {
+        "svg_id": "COVAC",
+        "svg_name": "Valle del Cauca",
+        "norm_name": "VALLE DEL CAUCA"
+    },
+    {
+        "svg_id": "COANT",
+        "svg_name": "Antioquia",
+        "norm_name": "ANTIOQUIA"
+    },
+    {
+        "svg_id": "COCOR",
+        "svg_name": "Córdoba",
+        "norm_name": "CORDOBA"
+    },
+    {
+        "svg_id": "COSUC",
+        "svg_name": "Sucre",
+        "norm_name": "SUCRE"
+    },
+    {
+        "svg_id": "COBOL",
+        "svg_name": "Bolívar",
+        "norm_name": "BOLIVAR"
+    },
+    {
+        "svg_id": "COATL",
+        "svg_name": "Atlántico",
+        "norm_name": "ATLANTICO"
+    },
+    {
+        "svg_id": "COMAG",
+        "svg_name": "Magdalena",
+        "norm_name": "MAGDALENA"
+    },
+    {
+        "svg_id": "COSAP",
+        "svg_name": "San Andrés y Providencia",
+        "norm_name": "SAN ANDRES Y PROVIDENCIA"
+    },
+    {
+        "svg_id": "COCAQ",
+        "svg_name": "Caquetá",
+        "norm_name": "CAQUETA"
+    },
+    {
+        "svg_id": "COHUI",
+        "svg_name": "Huila",
+        "norm_name": "HUILA"
+    },
+    {
+        "svg_id": "COGUV",
+        "svg_name": "Guaviare",
+        "norm_name": "GUAVIARE"
+    },
+    {
+        "svg_id": "COCAL",
+        "svg_name": "Caldas",
+        "norm_name": "CALDAS"
+    },
+    {
+        "svg_id": "COCAS",
+        "svg_name": "Casanare",
+        "norm_name": "CASANARE"
+    },
+    {
+        "svg_id": "COMET",
+        "svg_name": "Meta",
+        "norm_name": "META"
+    },
+    {
+        "svg_id": "CODC",
+        "svg_name": "Distrito Capital de Bogotá",
+        "norm_name": "DISTRITO CAPITAL DE BOGOTA"
+    },
+    {
+        "svg_id": "COSAN",
+        "svg_name": "Santander",
+        "norm_name": "SANTANDER"
+    },
+    {
+        "svg_id": "COTOL",
+        "svg_name": "Tolima",
+        "norm_name": "TOLIMA"
+    },
+    {
+        "svg_id": "COQUI",
+        "svg_name": "Quindío",
+        "norm_name": "QUINDIO"
+    },
+    {
+        "svg_id": "COCUN",
+        "svg_name": "Cundinamarca",
+        "norm_name": "CUNDINAMARCA"
+    },
+    {
+        "svg_id": "CORIS",
+        "svg_name": "Risaralda",
+        "norm_name": "RISARALDA"
+    }
+]

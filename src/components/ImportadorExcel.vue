@@ -18,9 +18,9 @@
 
       <!-- Subir archivo -->
       <div>
-        <label class="block text-sm font-medium mb-1 text-gray-700"
-          >Seleccionar archivo Excel</label
-        >
+        <label class="block text-sm font-medium mb-1 text-gray-700">
+          Seleccionar archivo Excel
+        </label>
         <input
           type="file"
           accept=".xlsx,.xls"
@@ -39,7 +39,10 @@
       </div>
 
       <!-- Errores -->
-      <div v-if="errores.length > 0" class="bg-red-50 border border-red-300 rounded p-3">
+      <div
+        v-if="errores.length > 0"
+        class="bg-red-50 border border-red-300 rounded p-3"
+      >
         <p class="font-medium text-red-800 mb-2">⚠️ Errores encontrados:</p>
         <ul class="text-sm text-red-700 space-y-1 max-h-40 overflow-y-auto">
           <li v-for="(error, i) in errores" :key="i">• {{ error }}</li>
@@ -47,7 +50,10 @@
       </div>
 
       <!-- Vista previa -->
-      <div v-if="entidadesImportadas.length > 0" class="border rounded p-3 bg-blue-50">
+      <div
+        v-if="entidadesImportadas.length > 0"
+        class="border rounded p-3 bg-blue-50"
+      >
         <p class="font-medium text-blue-900 mb-2">
           ✓ {{ entidadesImportadas.length }} entidad(es) lista(s) para importar:
         </p>
@@ -86,6 +92,7 @@ import { importarDesdeExcel, generarPlantillaExcel } from '@/utils/excelHandler'
 import { getDepartamentoById } from '@/data/departamentos'
 
 const store = useEntidadesStore()
+
 const entidadesImportadas = ref([])
 const errores = ref([])
 const inputArchivo = ref(null)
@@ -93,7 +100,7 @@ const cargando = ref(false)
 const mensajeExito = ref('')
 
 async function manejarArchivo(evento) {
-  const archivo = evento.target.files[0]
+  const archivo = evento?.target?.files?.[0]
   if (!archivo) return
 
   cargando.value = true
@@ -104,13 +111,14 @@ async function manejarArchivo(evento) {
   try {
     entidadesImportadas.value = await importarDesdeExcel(archivo)
   } catch (error) {
-    if (error.errores) {
+    // Manejo flexible para errores custom (con .errores / .entidades)
+    if (error?.errores) {
       errores.value = error.errores
-      if (error.entidades) {
-        entidadesImportadas.value = error.entidades
-      }
+      if (error?.entidades) entidadesImportadas.value = error.entidades
     } else {
-      errores.value = ['Error al leer el archivo: ' + error.message]
+      errores.value = [
+        'Error al leer el archivo: ' + (error?.message || 'desconocido'),
+      ]
     }
   } finally {
     cargando.value = false
@@ -118,22 +126,64 @@ async function manejarArchivo(evento) {
 }
 
 function confirmarImportacion() {
-  store.agregarMultiplesEntidades(entidadesImportadas.value)
+  try {
+    store.agregarMultiplesEntidades(entidadesImportadas.value)
 
-  mensajeExito.value = `✓ ${entidadesImportadas.value.length} entidades importadas correctamente`
+    mensajeExito.value = `✓ ${entidadesImportadas.value.length} entidades importadas correctamente`
 
-  setTimeout(() => {
-    entidadesImportadas.value = []
-    errores.value = []
-    mensajeExito.value = ''
-    if (inputArchivo.value) {
-      inputArchivo.value.value = ''
-    }
-  }, 3000)
+    setTimeout(() => {
+      entidadesImportadas.value = []
+      errores.value = []
+      mensajeExito.value = ''
+      if (inputArchivo.value) inputArchivo.value.value = ''
+    }, 3000)
+  } catch (e) {
+    errores.value = [
+      'No se pudieron importar las entidades: ' + (e?.message || 'desconocido'),
+    ]
+  }
 }
 
 function descargarPlantilla() {
-  generarPlantillaExcel()
+  try {
+    // Ruta feliz: generar la plantilla en Excel (XLSX)
+    generarPlantillaExcel()
+  } catch (e) {
+    // Plan B: CSV básico para que el usuario nunca quede bloqueado
+    errores.value = [
+      'No se pudo generar el Excel automáticamente. Te descargué una plantilla CSV de respaldo.',
+    ]
+    descargarPlantillaCSVRespaldo()
+  }
+}
+
+function descargarPlantillaCSVRespaldo() {
+  const encabezado = ['Nombre', 'Departamento', 'Logo']
+  const ejemplo = [
+    ['Universidad Nacional', 'Cundinamarca', 'logos/unal.png'],
+    ['Universidad de Antioquia', 'Antioquia', 'logos/udea.png'],
+    ['Alcaldía de Cali', 'Valle del Cauca', 'logos/cali.png'],
+    ['Contraloría de Bogotá', 'Bogotá D.C.', 'logos/contraloria.png'],
+  ]
+
+  const filas = [encabezado, ...ejemplo]
+    .map((row) =>
+      row
+        .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
+        .join(',')
+    )
+    .join('\n')
+
+  const blob = new Blob([filas], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'plantilla_entidades.csv'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
 
 function obtenerNombreDepartamento(id) {

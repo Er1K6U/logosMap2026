@@ -29,10 +29,16 @@ export const useEntidadesStore = defineStore('entidades', () => {
     return counts
   })
 
+  function normalizarDepartamento(dep) {
+    if (!dep) return null
+    return dep.toLowerCase().trim()
+  }
+
   // Actions (métodos)
   function agregarEntidad(entidad) {
     const nuevaEntidad = {
       ...entidad,
+      departamento: normalizarDepartamento(entidad.departamento),
       id: Date.now(),
       fechaRegistro: new Date().toISOString(),
     }

@@ -1,7 +1,7 @@
 <template>
   <div
     class="relative w-full min-h-screen bg-cover bg-center flex justify-center p-2 sm:p-6 overflow-hidden"
-    style="background-image: url('/assets/fondo.jpg');"
+    style="background-image: url('/assets/fondo.jpg')"
   >
     <!-- Overlay suave para que el fondo sea textura, no protagonista -->
     <div class="absolute inset-0 bg-white/70 pointer-events-none"></div>
@@ -92,7 +92,6 @@
             {{ entidad.nombre }}
           </div>
 
-
           <!-- Panel de detalles cuando está destacado -->
           <transition name="detalle">
             <div v-if="entidadDestacadaIndex === index" class="panel-detalles-destacado">
@@ -163,12 +162,20 @@ onMounted(async () => {
 
       const idsSVG = new Set(
         Array.from(svg.querySelectorAll('[id]'))
-          .map((el) => String(el.id || '').toLowerCase().trim())
+          .map((el) =>
+            String(el.id || '')
+              .toLowerCase()
+              .trim(),
+          )
           .filter(Boolean),
       )
 
       const faltantes = departamentos
-        .map((d) => String(d.id || '').toLowerCase().trim())
+        .map((d) =>
+          String(d.id || '')
+            .toLowerCase()
+            .trim(),
+        )
         .filter((id) => id && !idsSVG.has(id))
 
       if (faltantes.length) {
@@ -184,6 +191,7 @@ onMounted(async () => {
 
     setTimeout(async () => {
       configurarInteractividadMapa()
+      aplicarEstiloBanderaSVG()
 
       // ✅ evita bug de mediciones
       limpiarCachePosiciones()
@@ -214,21 +222,81 @@ function configurarInteractividadMapa() {
     elemento.style.transition = 'all 0.3s'
 
     elemento.addEventListener('mouseenter', () => {
-      elemento.style.fill = '#3b82f6'
-      elemento.style.opacity = '0.7'
+      elemento.style.opacity = '0.95'
+      elemento.style.strokeWidth = '2'
+      elemento.style.filter = 'brightness(1.05)'
     })
 
     elemento.addEventListener('mouseleave', () => {
-      if (store.departamentoSeleccionado !== elemento.id) {
-        elemento.style.fill = ''
-        elemento.style.opacity = '1'
-      }
+      elemento.style.opacity = '1'
+      elemento.style.strokeWidth = '1'
+      elemento.style.filter = ''
     })
 
     elemento.addEventListener('click', () => {
       const depId = elemento.id.toLowerCase()
       store.seleccionarDepartamento(depId)
     })
+  })
+}
+
+function aplicarEstiloBanderaSVG() {
+  const container = mapaContainer.value
+  if (!container) return
+
+  const svg = container.querySelector('svg')
+  if (!svg) return
+
+  const NS = 'http://www.w3.org/2000/svg'
+
+  // Asegura defs
+  let defs = svg.querySelector('defs')
+  if (!defs) {
+    defs = document.createElementNS(NS, 'defs')
+    svg.insertBefore(defs, svg.firstChild)
+  }
+
+  // Elimina si ya existe (para no duplicar al recargar)
+  const old = defs.querySelector('#banderaCO')
+  if (old) old.remove()
+
+  // Gradient vertical tipo bandera (amarillo/azul/rojo) pero sutil
+  const grad = document.createElementNS(NS, 'linearGradient')
+  grad.setAttribute('id', 'banderaCO')
+  grad.setAttribute('x1', '0')
+  grad.setAttribute('y1', '0')
+  grad.setAttribute('x2', '0')
+  grad.setAttribute('y2', '1')
+
+  const stops = [
+    { o: '0%', c: '#FCD116', a: '0.32' }, // amarillo
+    { o: '50%', c: '#FCD116', a: '0.32' },
+
+    { o: '50%', c: '#003893', a: '0.22' }, // azul
+    { o: '75%', c: '#003893', a: '0.22' },
+
+    { o: '75%', c: '#CE1126', a: '0.18' }, // rojo
+    { o: '100%', c: '#CE1126', a: '0.18' },
+  ]
+
+  stops.forEach((s) => {
+    const st = document.createElementNS(NS, 'stop')
+    st.setAttribute('offset', s.o)
+    st.setAttribute('stop-color', s.c)
+    st.setAttribute('stop-opacity', s.a)
+    grad.appendChild(st)
+  })
+
+  defs.appendChild(grad)
+
+  // Aplica fill + delineado a departamentos
+  const shapes = svg.querySelectorAll('path[id], g[id]')
+  shapes.forEach((el) => {
+    el.style.fill = 'url(#banderaCO)'
+    el.style.stroke = '#ffffff'
+    el.style.strokeWidth = '2'
+    el.style.filter = 'drop-shadow(0 0 3px rgba(0,0,0,0.3))'
+    el.style.vectorEffect = 'non-scaling-stroke' // que el borde no se deforme al escalar
   })
 }
 
@@ -281,7 +349,9 @@ function obtenerLogoSrc(logo) {
 }
 
 function calcularPosicion(departamentoId) {
-  const cacheKey = String(departamentoId || '').toLowerCase().trim()
+  const cacheKey = String(departamentoId || '')
+    .toLowerCase()
+    .trim()
   if (cacheKey && posicionesCache.value[cacheKey]) {
     return posicionesCache.value[cacheKey]
   }
@@ -390,6 +460,9 @@ function getSVGInfo() {
   width: 100%;
   height: 100%;
   display: block;
+
+  /* “levanta” el mapa */
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.18)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.1));
 }
 
 :deep(path) {

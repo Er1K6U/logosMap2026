@@ -4,7 +4,17 @@
     style="background-image: url('/assets/fondo.jpg')"
   >
     <!-- Overlay suave para que el fondo sea textura, no protagonista -->
-    <div class="absolute inset-0 bg-white/70 pointer-events-none"></div>
+    <div class="absolute inset-0 bg-white/70 pointer-events-none">
+      <!-- Encabezado presentación -->
+      <div class="relative z-20 text-center mt-6 mb-4">
+        <h1 class="text-3xl md:text-6xl font-extrabold text-gray-800 tracking-wide">
+          Hoy nos acompañan
+        </h1>
+        <div
+          class="w-24 h-1 mx-auto mt-3 bg-gradient-to-r from-yellow-400 via-blue-500 to-red-500 rounded-full"
+        ></div>
+      </div>
+    </div>
 
     <!-- Panel de información superior -->
     <div v-if="false" class="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-80 z-20">

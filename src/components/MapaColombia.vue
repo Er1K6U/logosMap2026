@@ -309,67 +309,92 @@ function aplicarEstiloBanderaSVG() {
 }
 
 function ajustarSanAndres(svg) {
-  const cosap = svg.querySelector('#COSAP') || svg.querySelector('#cosap')
-  if (!cosap) return
+  // Ocultar todos los nodos #COSAP originales (path + circle — islas demasiado pequeñas)
+  svg.querySelectorAll('#COSAP, #cosap').forEach((el) => (el.style.display = 'none'))
+
   try {
-    const bbox = cosap.getBBox()
-    if (!bbox.width || bbox.width < 0.5) return
-
-    const SCALE = 12
-    // Esquina superior izquierda (Noroeste): posición geográfica real de San Andrés
-    const targetCX = 155
-    const targetCY = 300
-
-    const bboxCX = bbox.x + bbox.width / 2
-    const bboxCY = bbox.y + bbox.height / 2
-
-    // translate(tx,ty) scale(S) → punto (bboxCX,bboxCY) aparece en (targetCX,targetCY)
-    const tx = targetCX - bboxCX * SCALE
-    const ty = targetCY - bboxCY * SCALE
-
-    cosap.setAttribute('transform', `translate(${tx.toFixed(2)},${ty.toFixed(2)}) scale(${SCALE})`)
-    cosap.style.strokeWidth = `${(1.5 / SCALE).toFixed(3)}`
-
-    // Marco de inserción alrededor del grupo escalado
-    const NS = 'http://www.w3.org/2000/svg'
-    const pad = 4
-    const bW = bbox.width * SCALE + pad * 2
-    const bH = bbox.height * SCALE + pad * 2
-    const bX = targetCX - bW / 2
-    const bY = targetCY - bH / 2
-
     const oldFrame = svg.querySelector('#cosap-frame')
     if (oldFrame) oldFrame.remove()
+
+    const NS = 'http://www.w3.org/2000/svg'
+
+    // ── Recuadro inset cartográfico — esquina superior izquierda ──
+    const fX = 22, fY = 20, fW = 195, fH = 192
 
     const frame = document.createElementNS(NS, 'g')
     frame.setAttribute('id', 'cosap-frame')
     frame.setAttribute('pointer-events', 'none')
 
-    const bgRect = document.createElementNS(NS, 'rect')
-    bgRect.setAttribute('x', String(bX.toFixed(1)))
-    bgRect.setAttribute('y', String(bY.toFixed(1)))
-    bgRect.setAttribute('width', String(bW.toFixed(1)))
-    bgRect.setAttribute('height', String(bH.toFixed(1)))
-    bgRect.setAttribute('rx', '6')
-    bgRect.setAttribute('fill', 'rgba(2,119,189,0.08)')
-    bgRect.setAttribute('stroke', '#0277BD')
-    bgRect.setAttribute('stroke-width', '2')
+    // Fondo del recuadro
+    const bg = document.createElementNS(NS, 'rect')
+    bg.setAttribute('x', String(fX))
+    bg.setAttribute('y', String(fY))
+    bg.setAttribute('width', String(fW))
+    bg.setAttribute('height', String(fH))
+    bg.setAttribute('rx', '8')
+    bg.setAttribute('fill', 'rgba(2,119,189,0.08)')
+    bg.setAttribute('stroke', '#0277BD')
+    bg.setAttribute('stroke-width', '2.5')
+    frame.appendChild(bg)
 
-    const label = document.createElementNS(NS, 'text')
-    label.setAttribute('x', String((bX + bW / 2).toFixed(1)))
-    label.setAttribute('y', String((bY + bH + 18).toFixed(1)))
-    label.setAttribute('text-anchor', 'middle')
-    label.setAttribute('font-size', '14')
-    label.setAttribute('font-weight', 'bold')
-    label.setAttribute('fill', '#01579B')
-    label.setAttribute('font-family', 'sans-serif')
-    label.textContent = 'SAN ANDRÉS'
+    // Auxiliar: path de isla
+    function isla(d) {
+      const p = document.createElementNS(NS, 'path')
+      p.setAttribute('d', d)
+      p.setAttribute('fill', '#0277BD')
+      p.setAttribute('fill-opacity', '0.82')
+      p.setAttribute('stroke', '#ffffff')
+      p.setAttribute('stroke-width', '1.5')
+      p.setAttribute('vector-effect', 'non-scaling-stroke')
+      return p
+    }
 
-    frame.appendChild(bgRect)
-    frame.appendChild(label)
-    cosap.parentNode.insertBefore(frame, cosap)
+    // Auxiliar: texto cartográfico
+    function txt(x, y, str, size = 11) {
+      const t = document.createElementNS(NS, 'text')
+      t.setAttribute('x', String(x))
+      t.setAttribute('y', String(y))
+      t.setAttribute('text-anchor', 'middle')
+      t.setAttribute('font-size', String(size))
+      t.setAttribute('font-weight', '700')
+      t.setAttribute('fill', '#01579B')
+      t.setAttribute('font-family', 'sans-serif')
+      t.textContent = str
+      return t
+    }
+
+    // ── Providencia ── compacta, zona superior-derecha del inset
+    // path dibujado a mano — forma arriñonada irregular ~45×42 unidades SVG
+    frame.appendChild(
+      isla(
+        'M138,50 C148,46 160,52 163,62 C166,72 162,83 153,87 ' +
+          'C144,91 133,87 127,79 C121,71 124,60 130,54 C133,51 136,51 138,50 Z',
+      ),
+    )
+    frame.appendChild(txt(145, 101, 'PROVIDENCIA', 10))
+
+    // ── San Andrés ── alargada NW-SE, zona inferior-izquierda del inset
+    // path dibujado a mano — forma de hoja/banana ~46×80 unidades SVG
+    frame.appendChild(
+      isla(
+        'M70,108 C80,100 94,105 98,118 C102,131 100,150 97,163 ' +
+          'C94,176 84,183 73,180 C62,177 56,165 57,151 C58,135 60,116 70,108 Z',
+      ),
+    )
+    frame.appendChild(txt(77, 195, 'SAN ANDRÉS', 10))
+
+    // Etiqueta principal debajo del recuadro
+    frame.appendChild(txt(fX + fW / 2, fY + fH + 20, 'SAN ANDRÉS Y PROVIDENCIA', 13))
+
+    // Insertar el frame usando el padre real del #COSAP original
+    const ref = svg.querySelector('#COSAP') || svg.querySelector('#cosap')
+    if (ref && ref.parentNode) {
+      ref.parentNode.insertBefore(frame, ref)
+    } else {
+      svg.appendChild(frame)
+    }
   } catch (e) {
-    console.warn('San Andrés adjust failed:', e)
+    console.warn('San Andrés inset failed:', e)
   }
 }
 

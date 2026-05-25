@@ -310,10 +310,10 @@ function ajustarSanAndres(svg) {
     const bbox = cosap.getBBox()
     if (!bbox.width || bbox.width < 0.5) return
 
-    const SCALE = 5
+    const SCALE = 7
     // Esquina superior izquierda (Noroeste): posición geográfica real de San Andrés
     const targetCX = 200
-    const targetCY = 120
+    const targetCY = 190
 
     const bboxCX = bbox.x + bbox.width / 2
     const bboxCY = bbox.y + bbox.height / 2
@@ -327,7 +327,7 @@ function ajustarSanAndres(svg) {
 
     // Marco de inserción alrededor del grupo escalado
     const NS = 'http://www.w3.org/2000/svg'
-    const pad = 14
+    const pad = 16
     const bW = bbox.width * SCALE + pad * 2
     const bH = bbox.height * SCALE + pad * 2
     const bX = targetCX - bW / 2
@@ -362,7 +362,7 @@ function ajustarSanAndres(svg) {
 
     frame.appendChild(bgRect)
     frame.appendChild(label)
-    svg.insertBefore(frame, cosap)
+    cosap.parentNode.insertBefore(frame, cosap)
   } catch (e) {
     console.warn('San Andrés adjust failed:', e)
   }

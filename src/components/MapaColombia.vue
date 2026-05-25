@@ -277,9 +277,9 @@ function ajustarSanAndres(svg) {
     if (!bbox.width || bbox.width < 0.5) return
 
     const SCALE = 5
-    // Esquina superior derecha del SVG (1000×1000): área oceánica libre
-    const targetCX = 870
-    const targetCY = 130
+    // Esquina superior izquierda (Noroeste): posición geográfica real de San Andrés
+    const targetCX = 200
+    const targetCY = 120
 
     const bboxCX = bbox.x + bbox.width / 2
     const bboxCY = bbox.y + bbox.height / 2

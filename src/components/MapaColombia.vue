@@ -4,18 +4,23 @@
     style="background-image: url('/assets/fondo.jpg'); height: calc(100vh - 56px)"
   >
     <!-- Overlay suave -->
-    <div class="absolute inset-0 bg-white/65 pointer-events-none">
-      <!-- Encabezado presentación -->
-      <div class="relative z-20 text-center mt-5 mb-2">
-        <h1
-          class="text-2xl md:text-5xl font-extrabold text-gray-800 tracking-widest uppercase"
-        >
-          Hoy nos acompañan
-        </h1>
-        <div
-          class="w-20 h-1 mx-auto mt-2 bg-gradient-to-r from-yellow-400 via-blue-500 to-red-500 rounded-full"
-        ></div>
-      </div>
+    <div class="absolute inset-0 bg-white/65 pointer-events-none"></div>
+
+    <!-- Título vertical — lado izquierdo, centro Y -->
+    <div
+      class="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-20 flex items-center gap-3 pointer-events-none"
+    >
+      <!-- Barra tricolor vertical -->
+      <div
+        class="w-1.5 self-stretch rounded-full bg-gradient-to-b from-yellow-400 via-blue-500 to-red-500"
+      ></div>
+      <!-- Texto apilado verticalmente, letras derechas -->
+      <h1
+        class="text-xl font-extrabold text-gray-800 uppercase"
+        style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.28em;"
+      >
+        Hoy nos acompañan
+      </h1>
     </div>
 
     <!-- Contenedor del mapa -->
@@ -310,10 +315,10 @@ function ajustarSanAndres(svg) {
     const bbox = cosap.getBBox()
     if (!bbox.width || bbox.width < 0.5) return
 
-    const SCALE = 7
+    const SCALE = 12
     // Esquina superior izquierda (Noroeste): posición geográfica real de San Andrés
-    const targetCX = 200
-    const targetCY = 190
+    const targetCX = 155
+    const targetCY = 300
 
     const bboxCX = bbox.x + bbox.width / 2
     const bboxCY = bbox.y + bbox.height / 2
@@ -327,7 +332,7 @@ function ajustarSanAndres(svg) {
 
     // Marco de inserción alrededor del grupo escalado
     const NS = 'http://www.w3.org/2000/svg'
-    const pad = 16
+    const pad = 4
     const bW = bbox.width * SCALE + pad * 2
     const bH = bbox.height * SCALE + pad * 2
     const bX = targetCX - bW / 2

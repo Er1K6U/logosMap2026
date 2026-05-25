@@ -107,7 +107,7 @@
       <img
         src="/assets/ovi-saludo.svg"
         alt="Ovi"
-        class="ovi-img h-[10vh] w-auto select-none"
+        class="ovi-img h-[18vh] w-auto select-none"
         :class="{ 'ovi-presentando': oviAnimando }"
       />
     </div>
@@ -745,10 +745,10 @@ function limpiarSeleccion() {
     transform: translateY(0) scale(1) rotate(0deg);
   }
   25% {
-    transform: translateY(-20px) scale(1.1) rotate(-6deg);
+    transform: translateY(-26px) scale(1.12) rotate(-6deg);
   }
   60% {
-    transform: translateY(-10px) scale(1.05) rotate(4deg);
+    transform: translateY(-12px) scale(1.06) rotate(4deg);
   }
   100% {
     transform: translateY(0) scale(1) rotate(0deg);
@@ -760,14 +760,14 @@ function limpiarSeleccion() {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-radius: 18px;
-  padding: 12px 14px;
+  border-radius: 20px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  min-width: 108px;
-  max-width: 148px;
+  gap: 10px;
+  min-width: 128px;
+  max-width: 168px;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.18),
     0 2px 8px rgba(0, 0, 0, 0.1);
@@ -775,8 +775,8 @@ function limpiarSeleccion() {
 }
 
 .showcase-logo-wrap {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   background: white;
   display: flex;
@@ -788,13 +788,13 @@ function limpiarSeleccion() {
 }
 
 .showcase-logo-img {
-  width: 56px;
-  height: 56px;
+  width: 70px;
+  height: 70px;
   object-fit: contain;
 }
 
 .showcase-iniciales {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
   color: #dc2626;
   text-transform: uppercase;
@@ -802,19 +802,19 @@ function limpiarSeleccion() {
 }
 
 .showcase-nombre {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: #1f2937;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 1px;
-  line-height: 1.3;
+  line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0;
-  max-width: 120px;
+  max-width: 140px;
 }
 
 /* Showcase crossfade */

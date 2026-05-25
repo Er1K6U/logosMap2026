@@ -363,50 +363,44 @@ function ajustarSanAndres(svg) {
       return t
     }
 
-    // ── Santa Catalina ── islita al norte de Providencia (separada por estrecho canal)
+    // ── Santa Catalina ── islita oval al NW de Providencia (~23×22 u)
     frame.appendChild(
       isla(
-        'M141,38 C147,34 156,35 159,41 ' +
-          'C162,47 159,55 153,57 ' +
-          'C147,59 140,55 138,49 ' +
-          'C136,43 138,40 141,38 Z',
+        'M148,36 C153,32 161,34 163,40 ' +
+          'C165,46 162,52 156,54 ' +
+          'C150,56 144,52 143,46 ' +
+          'C142,40 144,35 148,36 Z',
       ),
     )
 
-    // ── Providencia ── forma irregular con "morros" (montañas) — más rugosa al E
-    // Contorno basado en forma real: costa O más suave, costa E más accidentada
+    // ── Providencia ── compacta ~47×51 u, costa E accidentada (morros volcánicos)
     frame.appendChild(
       isla(
-        'M148,62 ' +
-          'C151,60 155,59 159,60 ' + // cima N
-          'C164,61 169,63 172,68 ' + // NE — punta volcánica
-          'C175,73 175,80 172,86 ' + // E coast
-          'C169,92 163,96 156,97 ' + // SE
-          'C149,98 142,95 137,89 ' + // S coast
-          'C132,83 130,74 132,66 ' + // SW — más suave
-          'C134,59 140,59 144,60 ' + // NW
-          'C146,60 147,61 148,62 Z', // cierre
+        'M152,46 ' +
+          'C158,40 167,41 172,49 ' + // NE — hombro montañoso
+          'C177,56 176,64 173,71 ' + // E — pico volcánico convexo
+          'C170,78 164,85 156,88 ' + // SE
+          'C148,91 140,88 135,81 ' + // S
+          'C130,74 130,62 135,53 ' + // SW — costa más suave
+          'C139,44 145,42 152,46 Z', // NW cierre
       ),
     )
-    frame.appendChild(txt(153, 108, 'PROVIDENCIA', 10))
+    frame.appendChild(txt(153, 102, 'PROVIDENCIA', 10))
 
-    // ── San Andrés ── isla alargada N-S con ligera curva hacia el SE
-    // Forma real: ~13 km largo × 3 km ancho — extremo N más ancho, afina hacia el S
-    // Costa O ligeramente cóncava (bahía/laguna Seaflower), costa E más convexa
+    // ── San Andrés ── alargada N-S ~28×75 u (ratio real ~1:2.7)
+    // Costa E convexa, costa O cóncava (laguna Seaflower), extremo N más ancho
     frame.appendChild(
       isla(
-        'M100,115 ' +
-          'C104,110 110,109 116,112 ' + // punta N — amplia
-          'C122,115 127,122 129,132 ' + // NE coast
-          'C131,142 131,154 129,164 ' + // E coast — convexa
-          'C127,173 122,180 116,184 ' + // SE tip
-          'C110,188 103,187 98,182 ' +  // punta S
-          'C93,177 90,169 89,159 ' +    // SW coast
-          'C88,149 89,138 90,128 ' +    // W coast — leve concavidad (laguna)
-          'C91,120 95,113 100,115 Z',   // cierre NW
+        'M102,109 ' +
+          'C106,104 112,107 113,116 ' + // NE hombro — el más ancho
+          'C114,125 112,142 110,156 ' + // E coast — ligeramente convexa
+          'C108,168 102,177 96,178 ' +  // SE — afina al S
+          'C90,179 86,173 86,163 ' +    // punta S
+          'C86,152 88,138 90,124 ' +    // SW — concavidad laguna Seaflower
+          'C92,114 97,107 102,109 Z',   // NW — cierre
       ),
     )
-    frame.appendChild(txt(109, 198, 'SAN ANDRÉS', 10))
+    frame.appendChild(txt(100, 191, 'SAN ANDRÉS', 10))
 
     // Etiqueta principal debajo del recuadro
     frame.appendChild(txt(fX + fW / 2, fY + fH + 20, 'SAN ANDRÉS Y PROVIDENCIA', 13))

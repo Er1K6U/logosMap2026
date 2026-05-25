@@ -84,7 +84,7 @@
     </div>
 
     <!-- Presentador Ovi + Showcase card -->
-    <div class="fixed bottom-4 right-4 z-50 flex items-end gap-3 pointer-events-none">
+    <div class="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex items-center gap-3 pointer-events-none">
       <!-- Showcase: logo grande de la entidad activa -->
       <transition name="showcase" mode="out-in">
         <div v-if="entidadActiva" :key="entidadActiva.id" class="showcase-card">

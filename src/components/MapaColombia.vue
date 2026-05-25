@@ -82,6 +82,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Presentador Ovi + Showcase card -->
+    <div class="fixed bottom-4 right-4 z-50 flex items-end gap-3 pointer-events-none">
+      <!-- Showcase: logo grande de la entidad activa -->
+      <transition name="showcase" mode="out-in">
+        <div v-if="entidadActiva" :key="entidadActiva.id" class="showcase-card">
+          <div class="showcase-logo-wrap">
+            <img
+              v-if="entidadActiva.logo"
+              :src="obtenerLogoSrc(entidadActiva.logo)"
+              class="showcase-logo-img"
+              alt=""
+            />
+            <span v-else class="showcase-iniciales">
+              {{ entidadActiva.nombre.substring(0, 2).toUpperCase() }}
+            </span>
+          </div>
+          <p class="showcase-nombre">{{ entidadActiva.nombre }}</p>
+        </div>
+      </transition>
+
+      <!-- Mascota Ovi -->
+      <img
+        src="/assets/ovi-saludo.svg"
+        alt="Ovi"
+        class="ovi-img h-[10vh] w-auto select-none"
+        :class="{ 'ovi-presentando': oviAnimando }"
+      />
+    </div>
   </div>
 </template>
 
@@ -96,8 +125,12 @@ const mapaSVG = ref('')
 const entidadDestacadaIndex = ref(-1)
 
 let intervaloRotacion = null
+let oviTimer = null
 
+const oviAnimando = ref(false)
 const posicionesCache = ref({})
+
+const entidadActiva = computed(() => entidadesVisibles.value[entidadDestacadaIndex.value] ?? null)
 
 function limpiarCachePosiciones() {
   posicionesCache.value = {}
@@ -215,6 +248,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (intervaloRotacion) clearInterval(intervaloRotacion)
+  if (oviTimer) clearTimeout(oviTimer)
   window.removeEventListener('resize', limpiarCachePosiciones)
 })
 
@@ -370,6 +404,15 @@ watch(
   },
   { immediate: true },
 )
+
+watch(entidadDestacadaIndex, () => {
+  if (oviTimer) clearTimeout(oviTimer)
+  oviAnimando.value = true
+  oviTimer = setTimeout(() => {
+    oviAnimando.value = false
+    oviTimer = null
+  }, 480)
+})
 
 function obtenerLogoSrc(logo) {
   if (!logo) return ''
@@ -661,5 +704,148 @@ function limpiarSeleccion() {
 .detalle-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(-20px);
+}
+
+/* ── Mascota Ovi ── */
+.ovi-img {
+  transform-origin: bottom center;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.28));
+  animation:
+    oviEntrada 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    oviFlotar 3s 0.9s ease-in-out infinite;
+}
+
+.ovi-presentando {
+  animation: oviLanzar 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+@keyframes oviEntrada {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes oviFlotar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes oviLanzar {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) scale(1.1) rotate(-6deg);
+  }
+  60% {
+    transform: translateY(-10px) scale(1.05) rotate(4deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+/* ── Showcase card ── */
+.showcase-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 18px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 108px;
+  max-width: 148px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+.showcase-logo-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.showcase-logo-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.showcase-iniciales {
+  font-size: 24px;
+  font-weight: 800;
+  color: #dc2626;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.showcase-nombre {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  max-width: 120px;
+}
+
+/* Showcase crossfade */
+.showcase-enter-active {
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.showcase-leave-active {
+  transition: all 0.2s ease-in;
+}
+.showcase-enter-from {
+  opacity: 0;
+  transform: translateY(14px) scale(0.9);
+}
+.showcase-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ovi-img,
+  .ovi-presentando {
+    animation: none !important;
+  }
+  .showcase-enter-active,
+  .showcase-leave-active {
+    transition: opacity 0.15s ease !important;
+  }
+  .showcase-enter-from,
+  .showcase-leave-to {
+    transform: none !important;
+  }
 }
 </style>

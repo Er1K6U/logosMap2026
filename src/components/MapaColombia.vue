@@ -1,65 +1,33 @@
 <template>
   <div
-    class="relative w-full min-h-screen bg-cover bg-center flex justify-center p-2 sm:p-6 overflow-hidden"
-    style="background-image: url('/assets/fondo.jpg')"
+    class="relative w-full bg-cover bg-center flex justify-center overflow-hidden"
+    style="background-image: url('/assets/fondo.jpg'); height: calc(100vh - 56px)"
   >
-    <!-- Overlay suave para que el fondo sea textura, no protagonista -->
-    <div class="absolute inset-0 bg-white/70 pointer-events-none">
+    <!-- Overlay suave -->
+    <div class="absolute inset-0 bg-white/65 pointer-events-none">
       <!-- Encabezado presentación -->
-      <div class="relative z-20 text-center mt-6 mb-4">
-        <h1 class="text-3xl md:text-6xl font-extrabold text-gray-800 tracking-wide">
+      <div class="relative z-20 text-center mt-5 mb-2">
+        <h1
+          class="text-2xl md:text-5xl font-extrabold text-gray-800 tracking-widest uppercase"
+        >
           Hoy nos acompañan
         </h1>
         <div
-          class="w-24 h-1 mx-auto mt-3 bg-gradient-to-r from-yellow-400 via-blue-500 to-red-500 rounded-full"
+          class="w-20 h-1 mx-auto mt-2 bg-gradient-to-r from-yellow-400 via-blue-500 to-red-500 rounded-full"
         ></div>
       </div>
-    </div>
-
-    <!-- Panel de información superior -->
-    <div v-if="false" class="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-80 z-20">
-      <div class="flex justify-between items-start mb-2">
-        <div>
-          <h3 class="text-lg font-bold text-gray-800">
-            {{ departamentoActual ? departamentoActual.nombre : 'Colombia' }}
-          </h3>
-          <p class="text-sm text-gray-600">{{ entidadesVisibles.length }} entidad(es)</p>
-        </div>
-        <button
-          v-if="departamentoActual"
-          @click="limpiarSeleccion"
-          class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded"
-        >
-          Ver todo
-        </button>
-      </div>
-
-      <div v-if="entidadesVisibles.length > 0" class="mt-3 max-h-60 overflow-y-auto">
-        <p class="text-xs font-semibold text-gray-700 mb-2">Entidades:</p>
-        <ul class="space-y-1">
-          <li
-            v-for="entidad in entidadesVisibles"
-            :key="entidad.id"
-            class="text-xs bg-blue-50 p-2 rounded hover:bg-blue-100 cursor-pointer"
-            @click="seleccionarEntidad(entidad)"
-          >
-            {{ entidad.nombre }}
-          </li>
-        </ul>
-      </div>
-
-      <div v-else class="text-xs text-gray-500 mt-3">No hay entidades en este departamento</div>
     </div>
 
     <!-- Contenedor del mapa -->
     <div class="relative z-10 flex items-center justify-center w-full">
       <div
+        class="mapa-wrapper"
         style="
           position: relative;
-          width: min(980px, calc(100vw - 16px), calc(100vh - 16px));
-          height: min(980px, calc(100vw - 16px), calc(100vh - 16px));
+          width: min(calc(100vw - 4px), calc(100vh - 60px));
+          height: min(calc(100vw - 4px), calc(100vh - 60px));
           margin: 0 auto;
-          overflow: hidden;
+          overflow: visible;
         "
       >
         <!-- SVG del mapa -->
@@ -92,21 +60,23 @@
               alt=""
               @error="entidad.logo = ''"
             />
-            <span v-else class="iniciales-marcador">
+            <span v-else class="iniciales-marcador uppercase">
               {{ entidad.nombre.substring(0, 2).toUpperCase() }}
             </span>
           </div>
 
-          <!-- ✅ Etiqueta SOLO cuando es el destacado -->
-          <div v-if="entidadDestacadaIndex === index" class="etiqueta-marcador">
+          <!-- Etiqueta SOLO cuando es el destacado -->
+          <div v-if="entidadDestacadaIndex === index" class="etiqueta-marcador uppercase">
             {{ entidad.nombre }}
           </div>
 
           <!-- Panel de detalles cuando está destacado -->
           <transition name="detalle">
             <div v-if="entidadDestacadaIndex === index" class="panel-detalles-destacado">
-              <h3 class="titulo-destacado">{{ entidad.nombre }}</h3>
-              <p class="info-destacado">📍 {{ obtenerNombreDepartamento(entidad.departamento) }}</p>
+              <h3 class="titulo-destacado uppercase tracking-wider">{{ entidad.nombre }}</h3>
+              <p class="info-destacado uppercase font-semibold tracking-wide">
+                📍 {{ obtenerNombreDepartamento(entidad.departamento) }}
+              </p>
             </div>
           </transition>
         </div>
@@ -127,7 +97,6 @@ const entidadDestacadaIndex = ref(-1)
 
 let intervaloRotacion = null
 
-// Cache de posiciones calculadas por SVG (evita recalcular en cada render)
 const posicionesCache = ref({})
 
 function limpiarCachePosiciones() {
@@ -138,7 +107,6 @@ const pagina = ref(0)
 const TAM_PAGINA = 15
 const INTERVALO_MS = 8000
 
-// ✅ cursor global para rotar entidad por entidad aunque haya < 15
 const cursorGlobal = ref(0)
 
 const entidadesVisibles = computed(() => {
@@ -151,6 +119,43 @@ const departamentoActual = computed(() => {
   if (!store.departamentoSeleccionado) return null
   return getDepartamentoById(store.departamentoSeleccionado)
 })
+
+// Colores predominantes de las banderas oficiales de cada departamento colombiano
+const COLORES_BANDERA = {
+  coama: '#006B3F', // Amazonas       - verde amazónico
+  coant: '#C8A400', // Antioquia      - amarillo dorado
+  coara: '#1B5E20', // Arauca         - verde
+  coatl: '#1565C0', // Atlántico      - azul Caribe
+  cobol: '#F9A825', // Bolívar        - amarillo
+  coboy: '#2E7D32', // Boyacá         - verde esmeralda
+  cocal: '#B71C1C', // Caldas         - rojo
+  cocaq: '#01579B', // Caquetá        - azul marino
+  cocas: '#388E3C', // Casanare       - verde
+  cocau: '#6A1B9A', // Cauca          - violeta/morado
+  coces: '#0D47A1', // Cesar          - azul oscuro
+  cocho: '#1B5E20', // Chocó          - verde selva
+  cocor: '#C62828', // Córdoba        - rojo
+  codc: '#B71C1C',  // Bogotá D.C.   - rojo
+  cocun: '#1565C0', // Cundinamarca   - azul
+  cogua: '#004D40', // Guainía        - verde oscuro
+  coguv: '#2E7D32', // Guaviare       - verde
+  cohui: '#C62828', // Huila          - rojo
+  colag: '#AD1457', // La Guajira     - rojo oscuro/granate
+  comag: '#0D47A1', // Magdalena      - azul
+  comet: '#01579B', // Meta           - azul marino
+  conar: '#455A64', // Nariño         - gris azulado/negro
+  consa: '#1976D2', // Norte Santander- azul
+  coput: '#2E7D32', // Putumayo       - verde
+  coqui: '#43A047', // Quindío        - verde esmeralda
+  coris: '#C62828', // Risaralda      - rojo
+  cosap: '#0277BD', // San Andrés     - azul Caribe
+  cosan: '#E65100', // Santander      - naranja/rojo
+  cosuc: '#1565C0', // Sucre          - azul
+  cotol: '#D32F2F', // Tolima         - rojo
+  covau: '#1B5E20', // Vaupés         - verde oscuro
+  covac: '#388E3C', // Valle del Cauca- verde
+  covid: '#558B2F', // Vichada        - verde claro
+}
 
 onMounted(async () => {
   try {
@@ -172,20 +177,12 @@ onMounted(async () => {
 
       const idsSVG = new Set(
         Array.from(svg.querySelectorAll('[id]'))
-          .map((el) =>
-            String(el.id || '')
-              .toLowerCase()
-              .trim(),
-          )
+          .map((el) => String(el.id || '').toLowerCase().trim())
           .filter(Boolean),
       )
 
       const faltantes = departamentos
-        .map((d) =>
-          String(d.id || '')
-            .toLowerCase()
-            .trim(),
-        )
+        .map((d) => String(d.id || '').toLowerCase().trim())
         .filter((id) => id && !idsSVG.has(id))
 
       if (faltantes.length) {
@@ -203,7 +200,6 @@ onMounted(async () => {
       configurarInteractividadMapa()
       aplicarEstiloBanderaSVG()
 
-      // ✅ evita bug de mediciones
       limpiarCachePosiciones()
       window.dispatchEvent(new Event('resize'))
       await nextTick()
@@ -229,18 +225,16 @@ function configurarInteractividadMapa() {
 
   paths.forEach((elemento) => {
     elemento.style.cursor = 'pointer'
-    elemento.style.transition = 'all 0.3s'
+    elemento.style.transition = 'all 0.3s ease'
 
     elemento.addEventListener('mouseenter', () => {
-      elemento.style.opacity = '0.95'
-      elemento.style.strokeWidth = '2'
-      elemento.style.filter = 'brightness(1.05)'
+      elemento.style.filter = 'brightness(1.18) drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
+      elemento.style.strokeWidth = '2.5'
     })
 
     elemento.addEventListener('mouseleave', () => {
-      elemento.style.opacity = '1'
-      elemento.style.strokeWidth = '1'
       elemento.style.filter = ''
+      elemento.style.strokeWidth = '1.5'
     })
 
     elemento.addEventListener('click', () => {
@@ -257,57 +251,87 @@ function aplicarEstiloBanderaSVG() {
   const svg = container.querySelector('svg')
   if (!svg) return
 
-  const NS = 'http://www.w3.org/2000/svg'
-
-  // Asegura defs
-  let defs = svg.querySelector('defs')
-  if (!defs) {
-    defs = document.createElementNS(NS, 'defs')
-    svg.insertBefore(defs, svg.firstChild)
-  }
-
-  // Elimina si ya existe (para no duplicar al recargar)
-  const old = defs.querySelector('#banderaCO')
-  if (old) old.remove()
-
-  // Gradient vertical tipo bandera (amarillo/azul/rojo) pero sutil
-  const grad = document.createElementNS(NS, 'linearGradient')
-  grad.setAttribute('id', 'banderaCO')
-  grad.setAttribute('x1', '0')
-  grad.setAttribute('y1', '0')
-  grad.setAttribute('x2', '0')
-  grad.setAttribute('y2', '1')
-
-  const stops = [
-    { o: '0%', c: '#FCD116', a: '0.32' }, // amarillo
-    { o: '50%', c: '#FCD116', a: '0.32' },
-
-    { o: '50%', c: '#003893', a: '0.22' }, // azul
-    { o: '75%', c: '#003893', a: '0.22' },
-
-    { o: '75%', c: '#CE1126', a: '0.18' }, // rojo
-    { o: '100%', c: '#CE1126', a: '0.18' },
-  ]
-
-  stops.forEach((s) => {
-    const st = document.createElementNS(NS, 'stop')
-    st.setAttribute('offset', s.o)
-    st.setAttribute('stop-color', s.c)
-    st.setAttribute('stop-opacity', s.a)
-    grad.appendChild(st)
-  })
-
-  defs.appendChild(grad)
-
-  // Aplica fill + delineado a departamentos
+  // Aplica color de bandera individual a cada departamento
   const shapes = svg.querySelectorAll('path[id], g[id]')
   shapes.forEach((el) => {
-    el.style.fill = 'url(#banderaCO)'
+    const depId = String(el.id || '').toLowerCase()
+    const color = COLORES_BANDERA[depId] || '#5B8DB8'
+
+    el.style.fill = color
+    el.style.fillOpacity = '0.78'
     el.style.stroke = '#ffffff'
-    el.style.strokeWidth = '2'
-    el.style.filter = 'drop-shadow(0 0 3px rgba(0,0,0,0.3))'
-    el.style.vectorEffect = 'non-scaling-stroke' // que el borde no se deforme al escalar
+    el.style.strokeWidth = '1.5'
+    el.style.vectorEffect = 'non-scaling-stroke'
+    el.style.transition = 'all 0.3s ease'
   })
+
+  // Amplía San Andrés y Providencia para mayor visibilidad
+  ajustarSanAndres(svg)
+}
+
+function ajustarSanAndres(svg) {
+  const cosap = svg.querySelector('#COSAP') || svg.querySelector('#cosap')
+  if (!cosap) return
+  try {
+    const bbox = cosap.getBBox()
+    if (!bbox.width || bbox.width < 0.5) return
+
+    const SCALE = 5
+    // Esquina superior derecha del SVG (1000×1000): área oceánica libre
+    const targetCX = 870
+    const targetCY = 130
+
+    const bboxCX = bbox.x + bbox.width / 2
+    const bboxCY = bbox.y + bbox.height / 2
+
+    // translate(tx,ty) scale(S) → punto (bboxCX,bboxCY) aparece en (targetCX,targetCY)
+    const tx = targetCX - bboxCX * SCALE
+    const ty = targetCY - bboxCY * SCALE
+
+    cosap.setAttribute('transform', `translate(${tx.toFixed(2)},${ty.toFixed(2)}) scale(${SCALE})`)
+    cosap.style.strokeWidth = `${(1.5 / SCALE).toFixed(3)}`
+
+    // Marco de inserción alrededor del grupo escalado
+    const NS = 'http://www.w3.org/2000/svg'
+    const pad = 14
+    const bW = bbox.width * SCALE + pad * 2
+    const bH = bbox.height * SCALE + pad * 2
+    const bX = targetCX - bW / 2
+    const bY = targetCY - bH / 2
+
+    const oldFrame = svg.querySelector('#cosap-frame')
+    if (oldFrame) oldFrame.remove()
+
+    const frame = document.createElementNS(NS, 'g')
+    frame.setAttribute('id', 'cosap-frame')
+    frame.setAttribute('pointer-events', 'none')
+
+    const bgRect = document.createElementNS(NS, 'rect')
+    bgRect.setAttribute('x', String(bX.toFixed(1)))
+    bgRect.setAttribute('y', String(bY.toFixed(1)))
+    bgRect.setAttribute('width', String(bW.toFixed(1)))
+    bgRect.setAttribute('height', String(bH.toFixed(1)))
+    bgRect.setAttribute('rx', '6')
+    bgRect.setAttribute('fill', 'rgba(2,119,189,0.08)')
+    bgRect.setAttribute('stroke', '#0277BD')
+    bgRect.setAttribute('stroke-width', '2')
+
+    const label = document.createElementNS(NS, 'text')
+    label.setAttribute('x', String((bX + bW / 2).toFixed(1)))
+    label.setAttribute('y', String((bY + bH + 18).toFixed(1)))
+    label.setAttribute('text-anchor', 'middle')
+    label.setAttribute('font-size', '14')
+    label.setAttribute('font-weight', 'bold')
+    label.setAttribute('fill', '#01579B')
+    label.setAttribute('font-family', 'sans-serif')
+    label.textContent = 'SAN ANDRÉS'
+
+    frame.appendChild(bgRect)
+    frame.appendChild(label)
+    svg.insertBefore(frame, cosap)
+  } catch (e) {
+    console.warn('San Andrés adjust failed:', e)
+  }
 }
 
 function iniciarRotacionAutomatica() {
@@ -350,7 +374,6 @@ watch(
 function obtenerLogoSrc(logo) {
   if (!logo) return ''
   const v = String(logo).trim()
-
   if (/^(https?:\/\/)/i.test(v) || /^data:image\//i.test(v)) return v
   if (v.startsWith('/')) return v
   if (v.startsWith('assets/')) return '/' + v
@@ -359,9 +382,7 @@ function obtenerLogoSrc(logo) {
 }
 
 function calcularPosicion(departamentoId) {
-  const cacheKey = String(departamentoId || '')
-    .toLowerCase()
-    .trim()
+  const cacheKey = String(departamentoId || '').toLowerCase().trim()
   if (cacheKey && posicionesCache.value[cacheKey]) {
     return posicionesCache.value[cacheKey]
   }
@@ -393,7 +414,6 @@ function calcularPosicion(departamentoId) {
   if (!depEl) {
     const dep = getDepartamentoById(depId)
     if (!dep?.coordenadas) return { x: 400, y: 400 }
-
     const x = (dep.coordenadas.x / 1000) * 800
     const y = (dep.coordenadas.y / 1000) * 800
     return { x, y }
@@ -410,11 +430,9 @@ function calcularPosicion(departamentoId) {
     const ctm = svg.getScreenCTM()
     if (ctm) {
       const screenPt = pt.matrixTransform(ctm)
-
       const containerRect = container.getBoundingClientRect()
       const x = screenPt.x - containerRect.left
       const y = screenPt.y - containerRect.top
-
       const pos = { x, y }
       posicionesCache.value[cacheKey || depId] = pos
       return pos
@@ -444,44 +462,32 @@ function seleccionarEntidad(entidad) {
 function limpiarSeleccion() {
   store.limpiarSeleccion()
 }
-
-function getSVGInfo() {
-  if (!mapaContainer.value) return null
-
-  const svg = mapaContainer.value.querySelector('svg')
-  if (!svg) return null
-
-  const rect = svg.getBoundingClientRect()
-  const vb = svg.viewBox?.baseVal
-
-  const fallbackWidth = Number(svg.getAttribute('width')) || 800
-  const fallbackHeight = Number(svg.getAttribute('height')) || 800
-
-  const viewBox = vb
-    ? { x: vb.x, y: vb.y, width: vb.width, height: vb.height }
-    : { x: 0, y: 0, width: fallbackWidth, height: fallbackHeight }
-
-  return { svg, rect, viewBox }
-}
 </script>
 
 <style scoped>
+/* ── Mapa SVG: efecto 3D con sombras profundas capas múltiples ── */
 :deep(svg) {
   width: 100%;
   height: 100%;
   display: block;
-
-  /* “levanta” el mapa */
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.18)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.1));
+  filter:
+    drop-shadow(0 55px 90px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 22px 38px rgba(0, 0, 0, 0.38))
+    drop-shadow(0 8px 16px rgba(0, 0, 0, 0.22))
+    drop-shadow(4px 6px 10px rgba(0, 0, 0, 0.18));
 }
 
 :deep(path) {
   stroke: #fff;
-  stroke-width: 1;
-  fill: #cbd5e1;
+  stroke-width: 1.5;
 }
 
-/* Animaciones de marcadores */
+/* Contenedor del mapa con sombra de "elevación" */
+.mapa-wrapper {
+  border-radius: 4px;
+}
+
+/* ── Marcadores ── */
 .marcador-animado {
   cursor: pointer;
   transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -507,7 +513,7 @@ function getSVGInfo() {
   transform: translate(-50%, -50%) scale(1.5) !important;
 }
 
-/* Ondas de pulso continuo */
+/* Ondas de pulso */
 .pulso-onda {
   position: absolute;
   top: 50%;
@@ -564,6 +570,8 @@ function getSVGInfo() {
   color: white;
   font-weight: bold;
   font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .logo-marcador {
@@ -575,7 +583,7 @@ function getSVGInfo() {
   padding: 6px;
 }
 
-/* Etiqueta nombre */
+/* Etiqueta nombre — en mayúscula */
 .etiqueta-marcador {
   position: absolute;
   top: 90px;
@@ -583,12 +591,14 @@ function getSVGInfo() {
   transform: translateX(-50%);
   background: #111827;
   color: white;
-  font-size: 14px;
-  padding: 8px 12px;
+  font-size: 12px;
+  padding: 6px 10px;
   border-radius: 8px;
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
   animation: fadeInOut 4s ease-in-out infinite;
   pointer-events: none;
 }
@@ -622,18 +632,23 @@ function getSVGInfo() {
 .titulo-destacado {
   font-weight: 800;
   color: #1f2937;
-  margin: 0 0 6px 0;
+  margin: 0 0 5px 0;
   text-align: center;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.2;
   word-break: break-word;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
 }
 
 .info-destacado {
-  font-size: 12px;
-  color: #6b7280;
+  font-size: 11px;
+  color: #4b5563;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.8px;
 }
 
 /* Transición del panel */

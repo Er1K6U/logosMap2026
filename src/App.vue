@@ -15,7 +15,7 @@
           <div class="flex gap-2">
             <RouterLink
               to="/"
-              class="px-3 py-1.5 rounded-lg text-sm font-semibold transition"
+              class="px-3 py-1.5 rounded-lg text-sm font-semibold transition uppercase tracking-wide"
               :class="
                 $route.path === '/' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
               "
@@ -24,7 +24,7 @@
             </RouterLink>
             <RouterLink
               to="/admin"
-              class="px-4 py-2 rounded-lg font-medium transition"
+              class="px-4 py-2 rounded-lg font-medium transition uppercase tracking-wide"
               :class="
                 $route.path === '/admin'
                   ? 'bg-blue-600 text-white'
